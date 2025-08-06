@@ -4,21 +4,27 @@ require('dotenv').config();
 
 const fs = require('fs');
 const { createServer } = require('@app-core/server');
-const { createConnection } = require('@app-core/mongoose');
+// const { createConnection } = require('@app-core/mongoose');
 
 const canLogEndpointInformation = process.env.CAN_LOG_ENDPOINT_INFORMATION;
 
-createConnection({
-  uri: process.env.MONGO_URI,
-});
+// Comment out since not needed for task
+// createConnection({
+//   uri: process.env.MONGO_URI,
+// });
 
 const server = createServer({
-  port: process.env.PORT,
+  port: process.env.PORT || 8811, // ✅ fallback for Render + local dev
   JSONLimit: '150mb',
   enableCors: true,
 });
 
-const ENDPOINT_CONFIGS = [];
+const ENDPOINT_CONFIGS = [
+  {
+    path: './endpoints/',
+    options: {},
+  },
+];
 
 function logEndpointMetaData(endpointConfigs) {
   const endpointData = [];
