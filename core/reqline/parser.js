@@ -20,7 +20,10 @@ function parse(reqline) {
       if (tokens.length < 2) {
         throw new AppError('Missing required HTTP keyword', 400);
       }
-      method = tokens[1];
+
+      // ✅ Use array destructuring (fix eslint prefer-destructuring)
+      [, method] = tokens;
+
       if (!['GET', 'POST'].includes(method)) {
         throw new AppError('Invalid HTTP method. Only GET and POST are supported', 400);
       }
@@ -52,8 +55,13 @@ function parse(reqline) {
   if (!method) throw new AppError('Missing required HTTP keyword', 400);
   if (!url) throw new AppError('Missing required URL keyword', 400);
 
-  // Build full URL with query
-  const queryString = Object.keys(query).length ? `?${new URLSearchParams(query).toString()}` : '';
+  // ✅ Build full URL with query without using URLSearchParams (supports Node >=8)
+  const queryString = Object.keys(query).length
+    ? `?${Object.entries(query)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join('&')}`
+    : '';
+
   const fullUrl = url + queryString;
 
   return { method, url, headers, query, body, full_url: fullUrl };
