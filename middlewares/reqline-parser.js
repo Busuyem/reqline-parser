@@ -1,5 +1,4 @@
-// core/middlewares/reqline-parser.js
-const { parse } = require('../reqline/parser');
+const parser = require('../core/reqline/parser');
 
 module.exports = {
   handler: async (requestComponents) => {
