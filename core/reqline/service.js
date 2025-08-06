@@ -1,16 +1,18 @@
 const axios = require('axios');
-const { parse } = require('./parser');
 const AppError = require('../errors/app-error');
 
-exports.execute = async (reqline) => {
-  const parsed = parse(reqline);
-  const { method, url, query, body, headers, full_url } = parsed;
+exports.execute = async (parsedReqline) => {
+  if (!parsedReqline || typeof parsedReqline !== 'object') {
+    throw new AppError('Service requires parsedReqline object', 400);
+  }
+
+  const { method, query, body, headers, fullUrl } = parsedReqline;
 
   const requestStart = Date.now();
   try {
     const response = await axios({
       method: method.toLowerCase(),
-      url: full_url,
+      url: fullUrl,
       headers,
       data: body,
     });
@@ -22,7 +24,7 @@ exports.execute = async (reqline) => {
         query,
         body,
         headers,
-        full_url,
+        fullUrl,
       },
       response: {
         http_status: response.status,

@@ -1,11 +1,18 @@
 const AppError = require('../errors/app-error');
 
+function safeParse(section, str) {
+  try {
+    return JSON.parse(str.trim());
+  } catch {
+    throw new AppError(`Invalid JSON format in ${section} section`, 400);
+  }
+}
+
 function parse(reqline) {
-  if (!reqline) {
-    throw new AppError('Missing reqline input', 400);
+  if (typeof reqline !== 'string' || !reqline.trim()) {
+    throw new AppError('Invalid reqline input. Must be a non-empty string.', 400);
   }
 
-  // Split parts by pipe delimiter
   const parts = reqline.split('|').map((p) => p.trim());
 
   let method;
@@ -21,7 +28,6 @@ function parse(reqline) {
         throw new AppError('Missing required HTTP keyword', 400);
       }
 
-      // ✅ Use array destructuring (fix eslint prefer-destructuring)
       [, method] = tokens;
 
       if (!['GET', 'POST'].includes(method)) {
@@ -30,23 +36,11 @@ function parse(reqline) {
     } else if (part.startsWith('URL ')) {
       url = part.substring(4).trim();
     } else if (part.startsWith('HEADERS ')) {
-      try {
-        headers = JSON.parse(part.substring(8).trim());
-      } catch {
-        throw new AppError('Invalid JSON format in HEADERS section', 400);
-      }
+      headers = safeParse('HEADERS', part.substring(8));
     } else if (part.startsWith('QUERY ')) {
-      try {
-        query = JSON.parse(part.substring(6).trim());
-      } catch {
-        throw new AppError('Invalid JSON format in QUERY section', 400);
-      }
+      query = safeParse('QUERY', part.substring(6));
     } else if (part.startsWith('BODY ')) {
-      try {
-        body = JSON.parse(part.substring(5).trim());
-      } catch {
-        throw new AppError('Invalid JSON format in BODY section', 400);
-      }
+      body = safeParse('BODY', part.substring(5));
     } else {
       throw new AppError('Invalid or unexpected syntax', 400);
     }
@@ -55,7 +49,6 @@ function parse(reqline) {
   if (!method) throw new AppError('Missing required HTTP keyword', 400);
   if (!url) throw new AppError('Missing required URL keyword', 400);
 
-  // ✅ Build full URL with query without using URLSearchParams (supports Node >=8)
   const queryString = Object.keys(query).length
     ? `?${Object.entries(query)
         .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
@@ -64,7 +57,7 @@ function parse(reqline) {
 
   const fullUrl = url + queryString;
 
-  return { method, url, headers, query, body, full_url: fullUrl };
+  return { method, url, headers, query, body, fullUrl };
 }
 
 module.exports = { parse };
